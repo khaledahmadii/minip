@@ -42,18 +42,19 @@ resource "aws_internet_gateway" "gw" {
 resource "aws_subnet" "public" {
   count                   = 2
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index) # 10.0.0.0/24, 10.0.1.0/24
+  # Explicitly avoiding the 10.0.1.x and 10.0.2.x ranges used by the private subnets
+  cidr_block              = ["10.0.0.0/24", "10.0.3.0/24"][count.index]
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
   tags = { Name = "ecommerce-public-subnet-${count.index + 1}" }
 }
 
-# Private Subnets for EC2 Instances
+# Private Subnets for EC2 Instances (Strictly matching diagram)
 resource "aws_subnet" "private" {
   count             = 2
   vpc_id            = aws_vpc.main.id
-  # Using spec CIDRs, assuming one per AZ for resilience
-  cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index + 2) # 10.0.2.0/24, 10.0.3.0/24
+  # Explicitly matching Private Subnet A (10.0.1.0/24) and Private Subnet B (10.0.2.0/24)
+  cidr_block        = ["10.0.1.0/24", "10.0.2.0/24"][count.index]
   availability_zone = data.aws_availability_zones.available.names[count.index]
   tags = { Name = "ecommerce-private-subnet-${count.index + 1}" }
 }
